@@ -1,16 +1,7 @@
 import React from "react";
 import Map, { Source, Layer, LayerProps } from "react-map-gl";
-import GeoJSON, { Point } from "geojson";
+import { CustomGeoJsonFeatureType } from "../modules/outlets/outletsSlice";
 
-export type CustomGeoJsonOutletProperties = {
-  name: string;
-  simplifiedMarketSegment: string;
-};
-
-export type CustomGeoJsonFeatureType = GeoJSON.Feature<
-  Point,
-  CustomGeoJsonOutletProperties
->;
 type Props = {
   featuresList: CustomGeoJsonFeatureType[];
 };

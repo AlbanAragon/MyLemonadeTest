@@ -3,7 +3,8 @@ import "./App.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 import Grid from "@mui/material/Grid";
 import Papa from "papaparse";
-import MLMap, { CustomGeoJsonFeatureType } from "./components/MLMap";
+import MLMap from "./components/MLMap";
+import { CustomGeoJsonFeatureType } from "./modules/outlets/outletsSlice";
 
 function App() {
   const [geojsonFeatureCollection, setGeojsonFeatureCollection] =

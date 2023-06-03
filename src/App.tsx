@@ -1,26 +1,96 @@
 import React from "react";
-import "./App.css";
-import "mapbox-gl/dist/mapbox-gl.css";
+
 import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
+import Box from "@mui/material/Box";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import InputLabel from "@mui/material/InputLabel";
+import FormControl from "@mui/material/FormControl";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+
 import Papa from "papaparse";
 import MLMap from "./components/MLMap";
-import { CustomGeoJsonFeatureType } from "./modules/outlets/outletsSlice";
+import "mapbox-gl/dist/mapbox-gl.css";
+
+import "./App.css";
+import {
+  CustomGeoJsonFeatureType,
+  OutletFeatureCollectionState,
+} from "./modules/outlets/outletsSlice";
+import { useAppSelector, useAppDispatch } from "./app/hooks";
+import {
+  selectOutletFeatureCollection,
+  setFeatures,
+} from "./modules/outlets/outletsSlice";
 
 function App() {
-  const [geojsonFeatureCollection, setGeojsonFeatureCollection] =
-    React.useState<CustomGeoJsonFeatureType[]>([]);
+  const dispatch = useAppDispatch();
+  const outletsFeatureCollection = useAppSelector(
+    selectOutletFeatureCollection
+  );
+
+  const [mapData, setMapData] = React.useState<
+    OutletFeatureCollectionState | undefined
+  >(undefined);
+  const [simplifiedMarketSegmentList, setSimplifiedMarketSegmentList] =
+    React.useState<string[]>([]);
+  const [filterSMS, setFilterSMS] = React.useState("");
+  const [searchFilter, setSearchFilter] = React.useState("");
+
+  const handleChangeSMSFilter = React.useCallback(
+    (event: SelectChangeEvent) => {
+      setFilterSMS(event.target.value);
+    },
+    []
+  );
+
+  const clearFilters = React.useCallback(() => {
+    setFilterSMS("");
+    setSearchFilter("");
+    setMapData(outletsFeatureCollection);
+  }, [outletsFeatureCollection]);
+
+  const applyFilters = React.useCallback(() => {
+    const filtered = outletsFeatureCollection.features.filter((outlet) => {
+      //Text search helper
+      const outletName = outlet.properties.name.toLowerCase();
+      const searchTermLower = searchFilter.toLowerCase().split("");
+      const isTextSearchIncluded = searchTermLower.every((word) =>
+        outletName.includes(word)
+      );
+      return (
+        isTextSearchIncluded &&
+        (filterSMS
+          ? outlet.properties.simplifiedMarketSegment === filterSMS
+          : true)
+      );
+    });
+
+    //Updating mapData with filtered collection
+    setMapData({ ...outletsFeatureCollection, features: filtered });
+  }, [filterSMS, searchFilter, outletsFeatureCollection]);
+
+  //Sumbit search filters
+  const submitSearch = React.useCallback(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
+        //Access and read data file
         const csvFile = require("./assets/data/data.csv");
         const response = await fetch(csvFile);
-
         const reader = response?.body?.getReader();
         const result = await reader?.read();
         const decoder = new TextDecoder("utf-8");
         const csvData = decoder.decode(result?.value);
         const jsonData = Papa.parse(csvData, { header: true }).data;
+
+        //Creating feature collection
         const featureCollection: CustomGeoJsonFeatureType[] = [];
         jsonData.forEach((data: any) => {
           const formatedLon = parseFloat(data["Longitude"].replace(",", "."));
@@ -40,31 +110,132 @@ function App() {
             });
           }
         });
-        setGeojsonFeatureCollection(featureCollection);
+
+        //Update redux store
+        dispatch(setFeatures(featureCollection));
       } catch (error) {
         console.error("Error:", error);
       }
     };
-
     fetchData();
   }, []);
 
+  //Update simplifiedMarketSegmentList on outletsFeatureCollection change
   React.useEffect(() => {
-    console.log("geojsonFeatureCollection", geojsonFeatureCollection);
-  }, [geojsonFeatureCollection]);
+    setMapData(outletsFeatureCollection);
+    const availableSMS: string[] = [];
+    outletsFeatureCollection.features.forEach((e) => {
+      if (!availableSMS.includes(e.properties.simplifiedMarketSegment)) {
+        availableSMS.push(e.properties.simplifiedMarketSegment);
+      }
+    });
+    setSimplifiedMarketSegmentList(availableSMS);
+  }, [outletsFeatureCollection]);
 
   return (
     <div className="App">
       <Grid container sx={{ justifyContent: "space-between", px: 2, mt: 10 }}>
-        <Grid item xs={12} md={8}>
-          <MLMap featuresList={geojsonFeatureCollection} />
+        <Grid item xs={12} md={9} sx={{ pr: 2 }}>
+          <Typography fontWeight={"bold"} textAlign="start">
+            Outlet
+          </Typography>
+          {mapData && <MLMap data={mapData} clusterRadius={20} />}
         </Grid>
-        <Grid
-          item
-          xs={3}
-          sx={{ backgroundColor: "lightgrey", borderRadius: 6 }}
-        >
-          Filters
+        <Grid item xs={12} md={3} sx={{ mt: { xs: 2, md: 0 } }}>
+          <Paper
+            sx={{
+              borderRadius: 6,
+              p: 2,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            elevation={6}
+          >
+            <Typography fontWeight={"bold"}>Filters</Typography>
+            <Box sx={{ flex: 1 }}>
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <TextField
+                  variant="standard"
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  InputProps={{ disableUnderline: true }}
+                  placeholder="Search by name"
+                  value={searchFilter}
+                  sx={{
+                    backgroundColor: "#f5f7f6",
+                    borderRadius: 6,
+
+                    input: { px: 1, color: "#4d8fa9" },
+                  }}
+                />
+              </FormControl>
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel sx={{ color: "#4d8fa9" }}>
+                  Select your market segment
+                </InputLabel>
+                <Select
+                  value={filterSMS}
+                  onChange={handleChangeSMSFilter}
+                  fullWidth
+                  disableUnderline
+                  variant="standard"
+                  sx={{
+                    backgroundColor: "#f5f7f6",
+                    borderRadius: 6,
+                    px: 1,
+                    color: "#4d8fa9",
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {simplifiedMarketSegmentList.map((e) => (
+                    <MenuItem key={`SMS_${e}`} value={e}>
+                      {e}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            <Grid container>
+              <Grid item xs={12} md={6} sx={{ px: 1 }}>
+                <Button
+                  variant="contained"
+                  onClick={clearFilters}
+                  sx={{
+                    backgroundColor: "#eb40341A",
+                    color: "#eb4034",
+                    fontWeight: "bold",
+                    textTransform: "none",
+                    "&:hover": {
+                      backgroundColor: "#eb403433",
+                    },
+                  }}
+                  fullWidth
+                >
+                  Clear
+                </Button>
+              </Grid>
+              <Grid item xs={12} md={6} sx={{ px: 1, mt: { xs: 1, md: 0 } }}>
+                <Button
+                  variant="contained"
+                  onClick={submitSearch}
+                  sx={{
+                    backgroundColor: "#066688",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    textTransform: "none",
+                    "&:hover": {
+                      backgroundColor: "#066688B3",
+                    },
+                  }}
+                  fullWidth
+                >
+                  Submit
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
         </Grid>
       </Grid>
     </div>

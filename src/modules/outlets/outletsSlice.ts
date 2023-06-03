@@ -13,7 +13,7 @@ export type CustomGeoJsonFeatureType = GeoJSON.Feature<
 >;
 
 export interface OutletFeatureCollectionState {
-  type: string;
+  type: "FeatureCollection";
   features: CustomGeoJsonFeatureType[];
 }
 
@@ -34,4 +34,5 @@ export const outletFeatureCollectionSlice = createSlice({
 
 export const selectOutletFeatureCollection = (state: RootState) => state.outlet;
 
+export const { setFeatures } = outletFeatureCollectionSlice.actions;
 export default outletFeatureCollectionSlice.reducer;

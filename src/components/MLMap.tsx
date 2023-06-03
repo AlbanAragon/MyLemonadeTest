@@ -1,13 +1,16 @@
-import React from "react";
 import Map, { Source, Layer, LayerProps } from "react-map-gl";
-import { CustomGeoJsonFeatureType } from "../modules/outlets/outletsSlice";
+import { OutletFeatureCollectionState } from "../modules/outlets/outletsSlice";
 
 type Props = {
-  featuresList: CustomGeoJsonFeatureType[];
+  data: OutletFeatureCollectionState;
+  clusterRadius?: number;
+  zoom?: number;
 };
 const MLMap = (props: Props) => {
   const MAPBOX_TOKEN =
     "pk.eyJ1IjoiZHRoaWIiLCJhIjoiY2tod2FjcWpiNWJkaDM1bDZ5b2ZqeGVweiJ9.cRnbp_ra6HirjBUG0byyNA";
+  const mapInitialLon = 2.213749;
+  const mapInitialLat = 46.227638;
 
   const clusterLayer: LayerProps = {
     id: "clusters",
@@ -39,6 +42,9 @@ const MLMap = (props: Props) => {
       "text-field": "{point_count_abbreviated}",
       "text-size": 12,
     },
+    paint: {
+      "text-color": "#FFF",
+    },
   };
 
   const unclusteredPointLayer: LayerProps = {
@@ -57,9 +63,9 @@ const MLMap = (props: Props) => {
   return (
     <Map
       initialViewState={{
-        longitude: 2.213749,
-        latitude: 46.227638,
-        zoom: 5,
+        longitude: mapInitialLon,
+        latitude: mapInitialLat,
+        zoom: props.zoom || 5,
       }}
       style={{ width: "100%", height: 600, borderRadius: 6 }}
       mapStyle="mapbox://styles/mapbox/streets-v9"
@@ -68,10 +74,10 @@ const MLMap = (props: Props) => {
       <Source
         id="outlets"
         type="geojson"
-        data={{ type: "FeatureCollection", features: props.featuresList }}
+        data={props.data}
         cluster={true}
         clusterMaxZoom={10}
-        clusterRadius={30}
+        clusterRadius={props.clusterRadius || 30}
       >
         <Layer {...clusterLayer} />
         <Layer {...clusterCountLayer} />

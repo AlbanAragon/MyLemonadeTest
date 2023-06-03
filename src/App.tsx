@@ -227,7 +227,7 @@ function App() {
                     }}
                     onClick={() => {
                       setMapCenter(e.geometry.coordinates as [number, number]);
-                      setMapZoom(20);
+                      setMapZoom(16);
                     }}
                   >
                     <Typography textAlign={"start"}>

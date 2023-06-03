@@ -5,6 +5,9 @@ import { RootState } from "../../app/store";
 export type CustomGeoJsonOutletProperties = {
   name: string;
   simplifiedMarketSegment: string;
+  address: string;
+  zipCode: string;
+  city: string;
 };
 
 export type CustomGeoJsonFeatureType = GeoJSON.Feature<

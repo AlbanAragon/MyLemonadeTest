@@ -25,6 +25,7 @@ import {
   selectOutletFeatureCollection,
   setFeatures,
 } from "./modules/outlets/outletsSlice";
+import { Divider } from "@mui/material";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -106,6 +107,9 @@ function App() {
                 name: data["Business Name"],
                 simplifiedMarketSegment:
                   data["Simplified Market Segment (GFC2)"],
+                address: `${data["Main address"]} ${data["Address 2"]} ${data["Address 3"]}`,
+                zipCode: data["Postal code"],
+                city: data["City"],
               },
             });
           }
@@ -196,6 +200,32 @@ function App() {
                   ))}
                 </Select>
               </FormControl>
+              <Typography textAlign="start" fontWeight={"bold"} sx={{ my: 2 }}>
+                Visible outlets :
+              </Typography>
+              <Box sx={{ maxHeight: 250, overflow: "scroll" }}>
+                {mapData?.features.map((e) => (
+                  <Box
+                    key={`feature_${e.properties.name}`}
+                    sx={{
+                      my: 1,
+                      "&:hover": {
+                        backgroundColor: "#0666881A",
+                        cursor: "pointer",
+                      },
+                    }}
+                  >
+                    <Typography textAlign={"start"}>
+                      {e.properties.name}
+                    </Typography>
+                    <Typography
+                      textAlign={"start"}
+                      fontSize={8}
+                    >{`${e.properties.address}, ${e.properties.zipCode} ${e.properties.city}`}</Typography>
+                    <Divider />
+                  </Box>
+                ))}
+              </Box>
             </Box>
             <Grid container>
               <Grid item xs={12} md={6} sx={{ px: 1 }}>
@@ -212,6 +242,7 @@ function App() {
                     },
                   }}
                   fullWidth
+                  disabled={!searchFilter && !filterSMS}
                 >
                   Clear
                 </Button>
@@ -230,6 +261,7 @@ function App() {
                     },
                   }}
                   fullWidth
+                  disabled={!searchFilter && !filterSMS}
                 >
                   Submit
                 </Button>

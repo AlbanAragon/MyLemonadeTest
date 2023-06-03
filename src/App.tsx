@@ -40,6 +40,10 @@ function App() {
     React.useState<string[]>([]);
   const [filterSMS, setFilterSMS] = React.useState("");
   const [searchFilter, setSearchFilter] = React.useState("");
+  const [mapCenter, setMapCenter] = React.useState<[number, number]>([
+    2.213749, 46.227638,
+  ]);
+  const [mapZoom, setMapZoom] = React.useState(5);
 
   const handleChangeSMSFilter = React.useCallback(
     (event: SelectChangeEvent) => {
@@ -143,7 +147,14 @@ function App() {
           <Typography fontWeight={"bold"} textAlign="start">
             Outlet
           </Typography>
-          {mapData && <MLMap data={mapData} clusterRadius={20} />}
+          {mapData && (
+            <MLMap
+              data={mapData}
+              clusterRadius={20}
+              center={mapCenter}
+              zoom={mapZoom}
+            />
+          )}
         </Grid>
         <Grid item xs={12} md={3} sx={{ mt: { xs: 2, md: 0 } }}>
           <Paper
@@ -213,6 +224,10 @@ function App() {
                         backgroundColor: "#0666881A",
                         cursor: "pointer",
                       },
+                    }}
+                    onClick={() => {
+                      setMapCenter(e.geometry.coordinates as [number, number]);
+                      setMapZoom(20);
                     }}
                   >
                     <Typography textAlign={"start"}>

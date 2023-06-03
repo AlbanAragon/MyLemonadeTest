@@ -1,16 +1,18 @@
-import Map, { Source, Layer, LayerProps } from "react-map-gl";
+import React from "react";
+import Map, { Source, Layer, LayerProps, MapRef } from "react-map-gl";
 import { OutletFeatureCollectionState } from "../modules/outlets/outletsSlice";
 
 type Props = {
   data: OutletFeatureCollectionState;
   clusterRadius?: number;
-  zoom?: number;
+  zoom: number;
+  center: [number, number];
 };
 const MLMap = (props: Props) => {
+  const mapRef = React.useRef<MapRef | null>(null);
+
   const MAPBOX_TOKEN =
     "pk.eyJ1IjoiZHRoaWIiLCJhIjoiY2tod2FjcWpiNWJkaDM1bDZ5b2ZqeGVweiJ9.cRnbp_ra6HirjBUG0byyNA";
-  const mapInitialLon = 2.213749;
-  const mapInitialLat = 46.227638;
 
   const clusterLayer: LayerProps = {
     id: "clusters",
@@ -60,12 +62,25 @@ const MLMap = (props: Props) => {
     },
   };
 
+  React.useEffect(() => {
+    if (mapRef && mapRef.current) {
+      const map = mapRef.current.getMap();
+      map.easeTo({
+        center: [props.center[0], props.center[1]],
+        duration: 1000,
+        zoom: props.zoom,
+        easing: (t) => t,
+      });
+    }
+  }, [props.center, props.zoom]);
+
   return (
     <Map
+      ref={mapRef}
       initialViewState={{
-        longitude: mapInitialLon,
-        latitude: mapInitialLat,
-        zoom: props.zoom || 5,
+        longitude: props.center[0],
+        latitude: props.center[1],
+        zoom: 5,
       }}
       style={{ width: "100%", height: 600, borderRadius: 6 }}
       mapStyle="mapbox://styles/mapbox/streets-v9"

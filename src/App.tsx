@@ -1,56 +1,71 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import React from "react";
+import "./App.css";
+import "mapbox-gl/dist/mapbox-gl.css";
+import Grid from "@mui/material/Grid";
+import Papa from "papaparse";
+import MLMap, { CustomGeoJsonFeatureType } from "./components/MLMap";
 
 function App() {
+  const [geojsonFeatureCollection, setGeojsonFeatureCollection] =
+    React.useState<CustomGeoJsonFeatureType[]>([]);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const csvFile = require("./assets/data/data.csv");
+        const response = await fetch(csvFile);
+
+        const reader = response?.body?.getReader();
+        const result = await reader?.read();
+        const decoder = new TextDecoder("utf-8");
+        const csvData = decoder.decode(result?.value);
+        const jsonData = Papa.parse(csvData, { header: true }).data;
+        const featureCollection: CustomGeoJsonFeatureType[] = [];
+        jsonData.forEach((data: any) => {
+          const formatedLon = parseFloat(data["Longitude"].replace(",", "."));
+          const formatedLat = parseFloat(data["Latitude"].replace(",", "."));
+          if (!isNaN(formatedLon) && !isNaN(formatedLat)) {
+            featureCollection.push({
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: [formatedLon, formatedLat],
+              },
+              properties: {
+                name: data["Business Name"],
+                simplifiedMarketSegment:
+                  data["Simplified Market Segment (GFC2)"],
+              },
+            });
+          }
+        });
+        setGeojsonFeatureCollection(featureCollection);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  React.useEffect(() => {
+    console.log("geojsonFeatureCollection", geojsonFeatureCollection);
+  }, [geojsonFeatureCollection]);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
+      <Grid container sx={{ justifyContent: "space-between", px: 2, mt: 10 }}>
+        <Grid item xs={12} md={8}>
+          <MLMap featuresList={geojsonFeatureCollection} />
+        </Grid>
+        <Grid
+          item
+          xs={3}
+          sx={{ backgroundColor: "lightgrey", borderRadius: 6 }}
+        >
+          Filters
+        </Grid>
+      </Grid>
     </div>
   );
 }
